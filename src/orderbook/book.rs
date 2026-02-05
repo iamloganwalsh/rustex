@@ -43,4 +43,14 @@ impl OrderBook {
     pub fn best_ask(&self) -> Option<Price> {
         self.asks.keys().next().copied()
     }
+
+    /// Get mutable reference to bids
+    pub fn bids_mut(&mut self) -> &mut BTreeMap<Price, VecDeque<Order>> {
+        &mut self.bids
+    }
+
+    /// Get mutable reference to asks
+    pub fn asks_mut(&mut self) -> &mut BTreeMap<Price, VecDeque<Order>> {
+        &mut self.asks
+    }
 }

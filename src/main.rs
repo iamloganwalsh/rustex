@@ -1,19 +1,35 @@
 mod types;
+mod orderbook;
+mod matching;
 
-use types::{Order, Side, OrderBook};
+use types::{Order, Side};
+use matching::MatchingEngine;
 
 fn main() {
     println!("Rustex - Low-Latency Order Matching Engine");
     println!("===========================================\n");
 
-    let mut book = OrderBook::new();
+    let mut engine = MatchingEngine::new();
 
-    // Add some orders
-    book.add_order(Order::new_limit(1, Side::Buy, 14900, 100, 0));
-    book.add_order(Order::new_limit(2, Side::Buy, 15000, 50, 1));
-    book.add_order(Order::new_limit(3, Side::Sell, 15100, 75, 2));
-    book.add_order(Order::new_limit(4, Side::Sell, 15200, 100, 3));
+    // Load the book with both sides
+    engine.process_order(Order::new_limit(1, Side::Sell, 15100, 50, 0));
+    engine.process_order(Order::new_limit(2, Side::Sell, 15200, 75, 1));
+    engine.process_order(Order::new_limit(3, Side::Buy, 14900, 100, 2));
 
-    println!("Best bid: {:?}", book.best_bid());
-    println!("Best ask: {:?}", book.best_ask());
+    println!("Book loaded:");
+    println!("Best bid: {:?}", engine.order_book.best_bid());
+    println!("Best ask: {:?}\n", engine.order_book.best_ask());
+
+    // Buy order that matches
+    let buy_order = Order::new_limit(4, Side::Buy, 15150, 80, 3);
+    let trades = engine.process_order(buy_order);
+
+    println!("Buy 80 @ $151.50 resulted in {} trades:", trades.len());
+    for trade in &trades {
+        println!("  {}", trade);
+    }
+
+    println!("\nFinal book:");
+    println!("Best bid: {:?}", engine.order_book.best_bid());
+    println!("Best ask: {:?}", engine.order_book.best_ask());
 }
