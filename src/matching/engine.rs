@@ -35,20 +35,21 @@ impl MatchingEngine {
     }
 
     fn match_buy_order(&mut self, order: &mut Order, trades: &mut Vec<Trade>) {
-        // Get buy price (None if market order)
-        let buy_price = match order.price {
-            Some(p) => p,
-            None => return,
-        };
 
         // Get asks in ascending order
         let asks = self.order_book.asks_mut();
         
-        // Collect price levels to process
-        let price_levels: Vec<Price> = asks
-            .range(..=buy_price)  // Only asks <= buy_price
-            .map(|(price, _)| *price)
-            .collect();  // Already in ascending order
+        let price_levels: Vec<Price> = if let Some(buy_price) = order.price {
+            // Limit order: only match asks <= buy_price
+            asks.range(..=buy_price)
+                .map(|(price, _)| *price)
+                .collect()
+        } else {
+            // Market order: match ALL asks (best prices first)
+            asks.keys()
+                .copied()
+                .collect()
+        };
 
         // Process each price level
         for ask_price in price_levels {
@@ -98,21 +99,23 @@ impl MatchingEngine {
     }
 
     fn match_sell_order(&mut self, order: &mut Order, trades: &mut Vec<Trade>) {
-        // Get sell price (None if market order)
-        let sell_price = match order.price {
-            Some(p) => p,
-            None => return,
-        };
-
-        // Get bids in descending order
         let bids = self.order_book.bids_mut();
-        
-        // Collect price levels to process (can't iterate and modify at same time)
-        let price_levels: Vec<Price> = bids
-            .range(sell_price..)  // Only bids >= sell_price
-            .map(|(price, _)| *price)
-            .rev()  // Highest price first
-            .collect();
+    
+        // Collect price levels to process
+        let price_levels: Vec<Price> = if let Some(sell_price) = order.price {
+            // Limit order: only match bids >= sell_price
+            bids.range(sell_price..)
+                .map(|(price, _)| *price)
+                .rev()
+                .collect()
+        } else {
+            // Market order: match ALL bids (best prices first)
+            bids.keys()
+                .copied()
+                .rev()
+                .collect()
+        };
+    
 
         // Process each price level
         for bid_price in price_levels {
