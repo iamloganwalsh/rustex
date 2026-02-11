@@ -124,12 +124,13 @@ impl OrderBook {
         for (price, orders) in self.bids.iter().rev() {
             let total_qty: u64 = orders.iter().map(|o| o.quantity).sum();
             let num_orders = orders.len();
+            let oldest_timestamp = orders.front().map(|o| o.timestamp);
             println!(
                 "  ${:>7.2}  |  {:>4} shares  ({} order{})",
                 *price as f64 / 100.0,
                 total_qty,
                 num_orders,
-                if num_orders == 1 { "" } else { "s" }
+                if num_orders == 1 { "" } else { "s" },
             );
         }
         println!();  // Extra newline at end

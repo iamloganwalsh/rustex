@@ -3,6 +3,9 @@ use std::fmt;
 /// Unique identifier for an order
 pub type OrderId = u64;
 
+/// Symbol identifier (e.g., "AAPL", "MSFT")
+pub type Symbol = String;
+
 /// Price in the smallest currency unit (e.g., cents)
 pub type Price = u64;
 
@@ -29,6 +32,7 @@ pub enum OrderType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Order {
     pub id: OrderId,
+    pub symbol: Symbol,
     pub side: Side,
     pub order_type: OrderType,
     pub price: Option<Price>,   // We use Option because market orders won't take a price. AKA nullable
@@ -38,38 +42,38 @@ pub struct Order {
 
 // Define methods for Order struct
 impl Order {
-    /// Create a new limit order
-    pub fn new_limit(
-        id: OrderId,
+    /// Create a limit order without ID or timestamp (will be assigned by engine)
+    pub fn limit(
+        symbol: Symbol,
         side: Side,
         price: Price,
         quantity: Quantity,
-        timestamp: u64,
     ) -> Self {
         Order {
-            id,
+            id: 0,  // Placeholder, will be set by engine
+            symbol,
             side,
             order_type: OrderType::Limit,
             price: Some(price),
             quantity,
-            timestamp,
+            timestamp: 0,  // Will be set by engine
         }
     }
 
-    /// Create a new market order
-    pub fn new_market(
-        id: OrderId,
+    /// Create a market order without ID or timestamp (will be assigned by engine)
+    pub fn market(
+        symbol: Symbol,
         side: Side,
         quantity: Quantity,
-        timestamp: u64,
     ) -> Self {
         Order {
-            id,
+            id: 0,  // Placeholder, will be set by engine
+            symbol,
             side,
             order_type: OrderType::Market,
             price: None,
             quantity,
-            timestamp,
+            timestamp: 0,  // Will be set by engine
         }
     }
 
