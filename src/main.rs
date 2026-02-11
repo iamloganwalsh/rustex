@@ -1,9 +1,4 @@
-mod types;
-mod orderbook;
-mod matching;
-
-use types::{Order, Side};
-use matching::MatchingEngine;
+use rustex::{MatchingEngine, Order, Side};
 
 fn main() {
     let mut engine = MatchingEngine::new();
@@ -17,16 +12,16 @@ fn main() {
         Order::limit(symbol.clone(), Side::Sell, 15200, 200),
 
         // Crossing orders (these should match)
-        Order::limit(symbol.clone(), Side::Buy, 15100, 50),   // matches 15100 sell
-        Order::limit(symbol.clone(), Side::Sell, 15000, 100), // matches 15000 buy
+        Order::limit(symbol.clone(), Side::Buy, 15100, 50),
+        Order::limit(symbol.clone(), Side::Sell, 15000, 100),
 
         // Market order
         Order::market(symbol.clone(), Side::Buy, 120),
 
         // Invalid Orders
-        Order::limit("".to_string(), Side::Buy, 100, 200),  // Invalid symbol
-        Order::limit(symbol.clone(), Side::Buy, 0, 200),    // Invalid price
-        Order::limit(symbol.clone(), Side::Buy, 100, 0),    // Invalid quantity
+        Order::limit("".to_string(), Side::Buy, 100, 200),
+        Order::limit(symbol.clone(), Side::Buy, 0, 200),
+        Order::limit(symbol.clone(), Side::Buy, 100, 0),
     ];
 
     for order in orders {

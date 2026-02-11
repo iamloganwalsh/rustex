@@ -43,7 +43,7 @@ impl MatchingEngine {
     fn validate_order(order: &Order) -> Result<(), String> {
         if order.quantity == 0 {
             return Err(format!(
-                "Invalid order (symbol={}, side={:?}, price={:?}, qty={:?}): quantity must be > 0",
+                "Invalid order: Quantity must be greater than 0; (symbol={}, side={:?}, price={:?}, qty={:?})",
                 order.symbol,
                 order.side,
                 order.price,
@@ -53,7 +53,7 @@ impl MatchingEngine {
     
         if order.symbol.is_empty() {
             return Err(format!(
-                "Invalid order (symbol={}, side={:?}, price={:?}, qty={}): symbol cannot be empty",
+                "Invalid order: Symbol cannot be empty; (symbol={}, side={:?}, price={:?}, qty={})",
                 order.symbol,
                 order.side,
                 order.price,
@@ -65,7 +65,7 @@ impl MatchingEngine {
             // If price ever becomes None since it's Some()
             let price = order.price.ok_or_else(|| {
                 format!(
-                    "Invalid order (symbol={}, side={:?}, price={:?}, qty={}): limit order missing price",
+                    "Invalid order: Limit order requires price; (symbol={}, side={:?}, price={:?}, qty={})",
                     order.symbol,
                     order.side,
                     order.price,
@@ -75,7 +75,7 @@ impl MatchingEngine {
     
             if price == 0 {
                 return Err(format!(
-                    "Invalid order (symbol={}, side={:?}, price={:?}, qty={}): price must be > 0",
+                    "Invalid order: Price must be greater than 0; (symbol={}, side={:?}, price={:?}, qty={})",
                     order.symbol,
                     order.side,
                     order.price,
