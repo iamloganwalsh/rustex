@@ -6,9 +6,8 @@ edition = "2021"
 [dependencies]
 
 [dev-dependencies]
-# For benchmarking later
-#criterion = "0.5"
+criterion = "0.5"
 
-#[[bench]]
-#name = "order_book"
-#harness = false
+[[bench]]
+name = "matching_bench"
+harness = false

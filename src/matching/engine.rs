@@ -1,4 +1,4 @@
-use crate::types::{Order, OrderType, Symbol, Trade, Side, Price};
+use crate::types::{Order, OrderType, OrderId, Symbol, Trade, Side, Price};
 use crate::orderbook::OrderBook;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -116,6 +116,15 @@ impl MatchingEngine {
         }
 
         trades
+    }
+
+    /// Cancel an order by ID and symbol
+    pub fn cancel_order(&mut self, symbol: &str, order_id: OrderId) -> bool {
+        if let Some(book) = self.order_books.get_mut(symbol) {
+            book.cancel_order(order_id)
+        } else {
+            false  // Symbol not found
+        }
     }
 
     fn match_buy_order(&mut self, order: &mut Order, trades: &mut Vec<Trade>) {
