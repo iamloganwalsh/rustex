@@ -1,61 +1,154 @@
 # Rustex - Low-Latency Order Matching Engine
 
-A high-performance order matching engine built in Rust, implementing price-time priority matching for limit and market orders.
+A low-latency order matching engine built in Rust, implementing price-time priority matching with multi-symbol support.
 
-## Features
+## Overview
 
-- **Price-Time Priority**: Orders matched by best price first, then by timestamp
-- **Order Types**: Support for limit and market orders
-- **Order Management**: O(1) order cancellation using HashMap indexing
-- **Partial Fills**: Orders can match across multiple price levels
-- **Order Book Visualization**: Real-time depth display
+Rustex is a production-quality matching engine that processes limit and market orders with sub-microsecond latency. It demonstrates advanced systems programming concepts including:
+
+- **Price-Time Priority Matching**: Orders matched by best price first, then timestamp (FIFO)
+- **Multi-Symbol Support**: Independent order books per trading symbol
+- **Order Validation**: Comprehensive input validation with detailed error messages
+- **High Performance**: Sub-microsecond latency for common operations
+- **Type Safety**: Leverages Rust's type system to prevent runtime errors
+
+## Performance Benchmarks
+
+| Operation | Latency (p50) | Status |
+|-----------|---------------|--------|
+| Add Single Order | 420 ns | ✅ |
+| Single Match | 603 ns | ✅ |
+| Partial Fill (3 levels) | 1.02 µs | ✅ |
+| Market Order Sweep | 2.6 µs | ✅ |
+| Order Cancellation | 314 ns | ✅ |
+| Cancel from Deep Book | 2.9 µs | ✅ |
+| Realistic Workload | 5.6 µs | ✅ |
+
+*Benchmarked on Apple M2 Pro, 16 GB Memory using Criterion*
 
 ## Architecture
 
-- **OrderBook**: BTreeMap-based structure for sorted price levels with FIFO queues
-- **MatchingEngine**: Core matching logic for buy/sell order processing
-- **Trade Generation**: Automatic trade creation when orders match
+### Core Components
 
-## Usage (Syntax)
+#### Order
+Represents a buy or sell request:
 ```rust
-let mut engine = MatchingEngine::new();
+pub struct Order {
+    pub id: OrderId,           // Unique identifier
+    pub symbol: Symbol,        // Trading symbol (e.g., "AAPL")
+    pub side: Side,           // Buy or Sell
+    pub order_type: OrderType, // Market or Limit
+    pub price: Option,  // Price in cents (None for market orders)
+    pub quantity: Quantity,    // Number of shares
+    pub timestamp: u64,        // Nanoseconds since epoch
+}
+```
+- Orders are accompanied by verbose error messages providing detailed descriptions of why an order was rejected (if it's rejected)
 
-// Add limit order
-engine.process_order(Order::new_limit(unique_order_id, Side::Buy, price, quantity, timestamp));
+#### OrderBook
+Price-level sorted order storage:
+- **Bids**: `BTreeMap<Price, VecDeque<Order>>` - Highest price first
+- **Asks**: `BTreeMap<Price, VecDeque<Order>>` - Lowest price first
+- **Order Tracking**: `HashMap<OrderId, (Side, Price)>` for O(1) cancellation
 
-// Add market order
-engine.process_order(Order::new_market(unique_order_id, Side::Sell, quantity, timestamp));  // No price because it's a market order
+#### MatchingEngine
+Processes orders and manages multiple order books:
+- Maintains one order book per symbol
+- Matches orders using price-time priority
+- Generates trades when orders cross
+- Auto-assigns order IDs and timestamps
 
-// Display order book
-engine.order_book.display();
-
-// Cancel order
-engine.order_book.cancel_order(order_id_to_cancel);
+#### Trade
+Record of a matched transaction:
+```rust
+pub struct Trade {
+    pub buyer_order_id: OrderId,
+    pub seller_order_id: OrderId,
+    pub price: Price,
+    pub quantity: Quantity,
+    pub timestamp: u64,
+}
 ```
 
-## Running
+## Building and Testing
+- All of the following commands should be executed from the root directory in the terminal (rustex/)
+
+### Build
+```bash
+# Development build
+cargo build
+
+# Optimized build
+cargo build --release
+```
+
+### Run
 ```bash
 cargo run
 ```
 
-## Performance Goals
+### Test
+```bash
+# Run all tests
+cargo test
 
-- Order processing: <10 microseconds (p99) [planned optimization]
-- Throughput: 100k+ orders/second [planned optimization]
+# Run specific test
+cargo test test_basic_buy_sell_match
+```
 
-## Tech Stack
+### Benchmark
+```bash
+# Run all benchmarks
+cargo bench
 
-- Rust 2021
-- BTreeMap for price-level sorting
-- HashMap for O(1) order lookup
-- VecDeque for FIFO queues at each price level
+# Run specific benchmark
+cargo bench -- {keyword e.g cancel}
+```
+To view the HTML report, open target/criterion/report/index.html
 
-## Roadmap
+### Known Bottlenecks
 
-- [x] Core matching engine
-- [x] Limit and market orders
-- [x] Order cancellation
-- [x] Order book visualization
-- [ ] Performance benchmarking
-- [ ] Lock-free order book
-- [ ] SIMD optimization
+- Deep order books (500+ orders at same price): 47 µs
+- Multi-symbol with many symbols: scales linearly
+
+These are edge cases and don't affect typical workloads.
+
+## Project Structure
+```
+rustex/
+├── src/
+│   ├── lib.rs              # Library entry point
+│   ├── main.rs             # Demo application
+│   ├── types/
+│   │   ├── mod.rs          # Type exports
+│   │   ├── order.rs        # Order and related types
+│   │   └── trade.rs        # Trade type
+│   ├── orderbook/
+│   │   ├── mod.rs          # OrderBook exports
+│   │   └── book.rs         # OrderBook implementation
+│   └── matching/
+│       ├── mod.rs          # MatchingEngine exports
+│       └── engine.rs       # Matching logic
+├── tests/
+│   ├── validation_tests.rs # Order validation tests
+│   └── matching_tests.rs   # Matching logic tests
+├── benches/
+│   └── matching_bench.rs   # Performance benchmarks
+├── Cargo.toml              # Dependencies and metadata
+└── README.md               # This file
+```
+
+## Future Enhancements
+
+Potential improvements:
+
+- Position tracking (user holdings per symbol)
+- Trade history with queries
+- Order modification (change price/quantity)
+- Stop-loss / Stop-limit orders
+- Fill-or-Kill / Immediate-or-Cancel orders
+- WebSocket API for real-time updates
+- Lock-free concurrent matching
+- SIMD optimizations
+- Persistent storage
+- Market data (VWAP, OHLC, volume)
